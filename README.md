@@ -9,3 +9,35 @@ Majority of utility functions are collected from the repositories:
 
 
 Thanks to the author(s). 
+
+## Available methods
+
+* generic/avgmeter
+    * AverageMeter
+* generic/loggers
+    * Logger
+* generic/model_complexity
+    * compute_model_complexity
+* generic/tools
+    * mkdir_if_missing
+    * check_isfile 
+    * read_json
+    * write_json
+    * set_random_seed
+    * download_url 
+    * read_image
+    * collect_env_info
+* generic/torchtools
+    * save_checkpoint
+    * load_checkpoint
+    * resume_from_checkpoint
+    * open_all_layers
+    * open_specified_layers
+    * count_num_param 
+    * load_pretrained_weights
+
+* optim/optimizer
+    * build_optimizer
+
+* optim/lr_scheduler
+    * build_lr_scheduler
