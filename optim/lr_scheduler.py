@@ -5,7 +5,7 @@ AVAI_SCH = ['single_step', 'multi_step', 'cosine']
 
 
 def build_lr_scheduler(
-    optimizer, lr_scheduler='single_step', stepsize=1, gamma=0.1, max_epoch=1
+    optimizer, lr_scheduler='single_step', stepsize=1, gamma=0.1, max_epoch=100
 ):
     """A function wrapper for building a learning rate scheduler.
 
@@ -64,5 +64,12 @@ def build_lr_scheduler(
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, float(max_epoch)
         )
+    
+    elif lr_scheduler == "exponential":
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(
+            optimizer, gamma=gamma
+        )
+    else:
+        assert False, "unknown lr_scheduler {}".format(lr_scheduler)
 
     return scheduler
