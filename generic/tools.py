@@ -11,12 +11,20 @@ import warnings
 import PIL
 import torch
 from PIL import Image
+import shutil
 
 __all__ = [
     'mkdir_if_missing', 'check_isfile', 'read_json', 'write_json',
-    'set_random_seed', 'download_url', 'read_image', 'collect_env_info'
+    'set_random_seed', 'download_url', 'read_image', 'collect_env_info',
+    'parse_path'
 ]
 
+
+def parse_path(path):
+    path = osp.abspath(path)
+    parent, fullfilename = osp.split(path)
+    filename, ext = osp.splitext(fullfilename)
+    return parent, filename, ext
 
 def mkdir_if_missing(dirname):
     """Creates dirname if it is missing."""
@@ -75,22 +83,9 @@ def download_url(url, dst):
     print('* url="{}"'.format(url))
     print('* destination="{}"'.format(dst))
 
-    def _reporthook(count, block_size, total_size):
-        global start_time
-        if count == 0:
-            start_time = time.time()
-            return
-        duration = time.time() - start_time
-        progress_size = int(count * block_size)
-        speed = int(progress_size / (1024*duration))
-        percent = int(count * block_size * 100 / total_size)
-        sys.stdout.write(
-            '\r...%d%%, %d MB, %d KB/s, %d seconds passed' %
-            (percent, progress_size / (1024*1024), speed, duration)
-        )
-        sys.stdout.flush()
-
-    urllib.request.urlretrieve(url, dst, _reporthook)
+    with urllib.request.urlopen(url) as response, open(dst, 'wb') as out_file:
+        shutil.copyfileobj(response, out_file)
+    
     sys.stdout.write('\n')
 
 
