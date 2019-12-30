@@ -12,12 +12,21 @@ import PIL
 import torch
 from PIL import Image
 import shutil
+import matplotlib.pyplot as plt
 
 __all__ = [
     'mkdir_if_missing', 'check_isfile', 'read_json', 'write_json',
     'set_random_seed', 'download_url', 'read_image', 'collect_env_info',
-    'parse_path'
+    'parse_path', 'show_image'
 ]
+
+
+def show_image(image):
+    dpi = 80
+    figsize = (image.shape[1] / float(dpi), image.shape[0] / float(dpi))
+    fig = plt.figure(figsize=figsize)
+    plt.imshow(image)
+    fig.show()
 
 
 def parse_path(path):
