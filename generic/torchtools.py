@@ -117,9 +117,10 @@ def resume_from_checkpoint(fpath, model, optimizer=None, scheduler=None):
         >>> )
     """
     print('Loading checkpoint from "{}"'.format(fpath))
+    load_pretrained_weights(model, fpath)
+    
     checkpoint = load_checkpoint(fpath)
-    model.load_state_dict(checkpoint['state_dict'])
-    print('Loaded model weights')
+
     if optimizer is not None and 'optimizer' in checkpoint.keys():
         optimizer.load_state_dict(checkpoint['optimizer'])
         print('Loaded optimizer')
