@@ -13,11 +13,12 @@ import torch
 from PIL import Image
 import shutil
 import matplotlib.pyplot as plt
+import zipfile
 
 __all__ = [
     'mkdir_if_missing', 'check_isfile', 'read_json', 'write_json',
     'set_random_seed', 'download_url', 'read_image', 'collect_env_info',
-    'parse_path', 'show_image'
+    'parse_path', 'show_image', 'unzip_file'
 ]
 
 
@@ -96,6 +97,18 @@ def download_url(url, dst):
         shutil.copyfileobj(response, out_file)
     
     sys.stdout.write('\n')
+
+
+def unzip_file(filepath, destdir):
+    """unzip the given zip file to destination directory.
+
+    Args:
+        filepath (str): zip file path to be extracted
+        destpath (str): source path to extract the zip file contents to
+    """
+    print('unzipping {} to {}'.format(filepath, destdir))
+    with zipfile.ZipFile(filepath,"r") as zip_ref:
+        zip_ref.extractall(destdir)
 
 
 def read_image(path):
