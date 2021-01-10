@@ -177,22 +177,3 @@ def load_image_in_PIL(path, mode='RGB'):
     img = Image.open(path)
     img.load()  # Very important for loading large image
     return img.convert(mode)
-
-
-def print_cuda_mem(info=None):
-    """To print cuda memory usage. """
-    if info:
-        print(info, end=' ')
-    mem_allocated = round(torch.cuda.memory_allocated() / 1048576)
-    mem_cached = round(torch.cuda.memory_cached() / 1048576)
-    print(f'Mem allocated: {mem_allocated}MB, Mem cached: {mem_cached}MB')
-
-
-def set_bn_eval(m):
-    """To set batchnorm in the model to eval mode
-
-    usage: model.apply(set_bn_eval)
-    """
-    classname = m.__class__.__name__
-    if classname.find('BatchNorm') != -1:
-        m.eval()

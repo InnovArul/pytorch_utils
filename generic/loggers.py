@@ -2,10 +2,11 @@ from __future__ import absolute_import
 import os
 import sys
 import os.path as osp
+import inspect
 
 from .tools import mkdir_if_missing
 
-__all__ = ['Logger', 'RankLogger']
+__all__ = ['Logger', 'RankLogger', 'disable_all_print_once', 'print_once']
 
 
 class Logger(object):
@@ -145,3 +146,38 @@ class RankLogger(object):
                 self.logger[name]['epoch'], self.logger[name]['rank1']
             ):
                 print('- epoch {}\t rank1 {:.1%}'.format(epoch, rank1))
+
+
+
+is_print_once_enabled = True
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+
+    return decorate
+
+
+def disable_all_print_once():
+    global is_print_once_enabled
+    is_print_once_enabled = False
+
+
+@static_vars(lines={})
+def print_once(msg):
+    # return from the function if the API is disabled
+    global is_print_once_enabled
+    if not is_print_once_enabled:
+        return
+
+    from inspect import getframeinfo, stack
+
+    caller = getframeinfo(stack()[1][0])
+    current_file_line = "%s:%d" % (caller.filename, caller.lineno)
+
+    # if the current called file and line is not in buffer print once
+    if current_file_line not in print_once.lines:
+        print(msg)
+        print_once.lines[current_file_line] = True
+

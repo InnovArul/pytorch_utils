@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from .radam import RAdam
 
-AVAI_OPTIMS = ['adam', 'amsgrad', 'sgd', 'rmsprop', 'radam']
+AVAI_OPTIMS = ['adam', 'amsgrad', 'sgd', 'rmsprop', 'radam', 'adamw']
 
 
 def build_optimizer(
@@ -18,7 +18,7 @@ def build_optimizer(
     sgd_nesterov=False,
     rmsprop_alpha=0.99,
     adam_beta1=0.9,
-    adam_beta2=0.99,
+    adam_beta2=0.999,
     staged_lr=False,
     new_layers='',
     base_lr_mult=0.1
@@ -35,7 +35,7 @@ def build_optimizer(
         sgd_nesterov (bool, optional): enables Nesterov momentum. Default is False.
         rmsprop_alpha (float, optional): smoothing constant for rmsprop. Default is 0.99.
         adam_beta1 (float, optional): beta-1 value in adam. Default is 0.9.
-        adam_beta2 (float, optional): beta-2 value in adam. Default is 0.99,
+        adam_beta2 (float, optional): beta-2 value in adam. Default is 0.999,
         staged_lr (bool, optional): uses different learning rates for base and new layers. Base
             layers are pretrained layers while new layers are randomly initialized, e.g. the
             identity classification layer. Enabling ``staged_lr`` can allow the base layers to
@@ -46,11 +46,11 @@ def build_optimizer(
 
     Examples::
         >>> # A normal optimizer can be built by
-        >>> optimizer = torchreid.optim.build_optimizer(model, optim='sgd', lr=0.01)
+        >>> optimizer = build_optimizer(model, optim='sgd', lr=0.01)
         >>> # If you want to use a smaller learning rate for pretrained layers
         >>> # and the attribute name for the randomly initialized layer is 'classifier',
         >>> # you can do
-        >>> optimizer = torchreid.optim.build_optimizer(
+        >>> optimizer = build_optimizer(
         >>>     model, optim='sgd', lr=0.01, staged_lr=True,
         >>>     new_layers='classifier', base_lr_mult=0.1
         >>> )
@@ -58,7 +58,7 @@ def build_optimizer(
         >>> # have learning rate 0.01 * 0.1.
         >>> # new_layers can also take multiple attribute names. Say the new layers
         >>> # are 'fc' and 'classifier', you can do
-        >>> optimizer = torchreid.optim.build_optimizer(
+        >>> optimizer = build_optimizer(
         >>>     model, optim='sgd', lr=0.01, staged_lr=True,
         >>>     new_layers=['fc', 'classifier'], base_lr_mult=0.1
         >>> )
@@ -112,6 +112,14 @@ def build_optimizer(
 
     if optim == 'adam':
         optimizer = torch.optim.Adam(
+            param_groups,
+            lr=lr,
+            weight_decay=weight_decay,
+            betas=(adam_beta1, adam_beta2),
+        )
+
+    elif optim == 'adamw':
+        optimizer = torch.optim.AdamW(
             param_groups,
             lr=lr,
             weight_decay=weight_decay,

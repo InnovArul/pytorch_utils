@@ -17,6 +17,8 @@ Thanks to the author(s).
 
 * generic/loggers
     * Logger
+    * disable_all_print_once
+    * print_once
 
 * generic/model_complexity
     * compute_model_complexity
@@ -30,7 +32,10 @@ Thanks to the author(s).
     * download_url 
     * read_image
     * collect_env_info
-    * 
+    * get_current_time
+    * save_scripts
+    * load_image_in_PIL
+
 * generic/torchtools
     * save_checkpoint
     * load_checkpoint
@@ -39,11 +44,9 @@ Thanks to the author(s).
     * open_specified_layers
     * count_num_param 
     * load_pretrained_weights
-    * get_current_time
-    * save_scripts
-    * load_image_in_PIL
-    * print_cuda_mem
     * set_bn_eval
+    * set_seed
+    * print_cuda_mem
 
 * optim/optimizer
     * build_optimizer

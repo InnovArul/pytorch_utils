@@ -7,13 +7,14 @@ from functools import partial
 from collections import OrderedDict
 import torch
 import torch.nn as nn
+import random, numpy as np
 
 from .tools import mkdir_if_missing
 
 __all__ = [
     'save_checkpoint', 'load_checkpoint', 'resume_from_checkpoint',
     'open_all_layers', 'open_specified_layers', 'count_num_param',
-    'load_pretrained_weights'
+    'load_pretrained_weights', 'set_seed', 'print_cuda_mem',
 ]
 
 
@@ -310,3 +311,30 @@ def load_pretrained_weights(model, weight_path):
                 'due to unmatched keys or layer size: {}'.
                 format(discarded_layers)
             )
+
+
+def set_seed(seed_val):
+    """set seed for reproducibility"""
+    # set seed for reproducibility
+    print("setting seed", seed_val)
+    os.environ['PYTHONHASHSEED'] = str(seed_val)
+
+    # torch seed
+    torch.manual_seed(seed_val)
+    torch.cuda.manual_seed(seed_val)
+    torch.cuda.manual_seed_all(seed_val)
+
+    # other lib seed
+    np.random.seed(seed_val)
+    random.seed(seed_val)
+
+
+def print_cuda_mem(info=None):
+    """To print cuda memory usage. """
+    if info:
+        print(info, end=' ')
+    mem_allocated = round(torch.cuda.memory_allocated() / 1048576)
+    mem_cached = round(torch.cuda.memory_cached() / 1048576)
+    print(f'Mem allocated: {mem_allocated}MB, Mem cached: {mem_cached}MB')
+
+
