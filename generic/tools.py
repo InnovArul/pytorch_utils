@@ -17,8 +17,9 @@ import zipfile
 
 __all__ = [
     'mkdir_if_missing', 'check_isfile', 'read_json', 'write_json',
-    'set_random_seed', 'download_url', 'read_image', 'collect_env_info',
-    'parse_path', 'show_image', 'unzip_file'
+    'download_url', 'read_image', 'collect_env_info',
+    'parse_path', 'show_image', 'unzip_file', 'load_image_in_PIL',
+    'save_scripts', 'get_current_time'
 ]
 
 
@@ -75,13 +76,6 @@ def write_json(obj, fpath):
         json.dump(obj, f, indent=4, separators=(',', ': '))
 
 
-def set_random_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-
-
 def download_url(url, dst):
     """Downloads file from a url to a destination.
 
@@ -95,7 +89,7 @@ def download_url(url, dst):
 
     with urllib.request.urlopen(url) as response, open(dst, 'wb') as out_file:
         shutil.copyfileobj(response, out_file)
-    
+
     sys.stdout.write('\n')
 
 
@@ -158,7 +152,14 @@ def get_current_time(f='l'):
 
 
 def save_scripts(path, scripts_to_save=None):
-    """To backup files (typically, before starting an experiment) """
+    """To backup files (typically, before starting an experiment)
+
+     usage:
+        myutils.save_scripts(log_dir, scripts_to_save=glob('*.*'))
+        myutils.save_scripts(log_dir, scripts_to_save=glob('dataset/*.py', recursive=True))
+        myutils.save_scripts(log_dir, scripts_to_save=glob('model/*.py', recursive=True))
+        myutils.save_scripts(log_dir, scripts_to_save=glob('myutils/*.py', recursive=True))
+    """
     if not os.path.exists(os.path.join(path, 'scripts')):
         os.makedirs(os.path.join(path, 'scripts'))
 
