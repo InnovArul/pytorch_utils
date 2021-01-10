@@ -144,3 +144,55 @@ def collect_env_info():
     env_str = get_pretty_env_info()
     env_str += '\n        Pillow ({})'.format(PIL.__version__)
     return env_str
+
+
+def get_current_time(f='l'):
+    """get current time
+    :param f: 'l' for log, 'f' for file name
+    :return: formatted time
+    """
+    if f == 'l':
+        return time.strftime('%m/%d %H:%M:%S', time.localtime(time.time()))
+    elif f == 'f':
+        return time.strftime('%m_%d_%H_%M', time.localtime(time.time()))
+
+
+def save_scripts(path, scripts_to_save=None):
+    """To backup files (typically, before starting an experiment) """
+    if not os.path.exists(os.path.join(path, 'scripts')):
+        os.makedirs(os.path.join(path, 'scripts'))
+
+    if scripts_to_save is not None:
+        for script in scripts_to_save:
+            dst_path = os.path.join(path, 'scripts', script)
+            try:
+                shutil.copy(script, dst_path)
+            except IOError:
+                os.makedirs(os.path.dirname(dst_path))
+                shutil.copy(script, dst_path)
+
+
+def load_image_in_PIL(path, mode='RGB'):
+    """Read image as PIL """
+    img = Image.open(path)
+    img.load()  # Very important for loading large image
+    return img.convert(mode)
+
+
+def print_cuda_mem(info=None):
+    """To print cuda memory usage. """
+    if info:
+        print(info, end=' ')
+    mem_allocated = round(torch.cuda.memory_allocated() / 1048576)
+    mem_cached = round(torch.cuda.memory_cached() / 1048576)
+    print(f'Mem allocated: {mem_allocated}MB, Mem cached: {mem_cached}MB')
+
+
+def set_bn_eval(m):
+    """To set batchnorm in the model to eval mode
+
+    usage: model.apply(set_bn_eval)
+    """
+    classname = m.__class__.__name__
+    if classname.find('BatchNorm') != -1:
+        m.eval()

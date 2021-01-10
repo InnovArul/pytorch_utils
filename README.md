@@ -27,6 +27,7 @@ Thanks to the author(s).
     * download_url 
     * read_image
     * collect_env_info
+    * 
 * generic/torchtools
     * save_checkpoint
     * load_checkpoint
@@ -35,6 +36,11 @@ Thanks to the author(s).
     * open_specified_layers
     * count_num_param 
     * load_pretrained_weights
+    * get_current_time
+    * save_scripts
+    * load_image_in_PIL
+    * print_cuda_mem
+    * set_bn_eval
 
 * optim/optimizer
     * build_optimizer
