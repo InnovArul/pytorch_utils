@@ -14,10 +14,13 @@ Thanks to the author(s).
 
 * generic/avgmeter
     * AverageMeter
+
 * generic/loggers
     * Logger
+
 * generic/model_complexity
     * compute_model_complexity
+
 * generic/tools
     * mkdir_if_missing
     * check_isfile 
