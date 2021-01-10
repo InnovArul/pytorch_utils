@@ -3,6 +3,7 @@ import os
 import sys
 import os.path as osp
 import inspect
+from colorama import Fore, Style
 
 from .tools import mkdir_if_missing
 
@@ -178,6 +179,6 @@ def print_once(msg):
 
     # if the current called file and line is not in buffer print once
     if current_file_line not in print_once.lines:
-        print(msg)
+        print(f"{Fore.GREEN}{msg}{Style.RESET_ALL}")
         print_once.lines[current_file_line] = True
 
