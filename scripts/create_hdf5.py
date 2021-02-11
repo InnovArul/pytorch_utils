@@ -48,6 +48,7 @@ def create_hdf5_from_dataset(dataset_dir, result_hdf5):
         dataset_dir (str): dataset folder with images
         result_hdf5 (str): hdf5 path
     """    
+    print(f"create_hdf5 ({dataset_dir, result_hdf5})")
     hf = h5py.File(result_hdf5, 'w')  # open the file in write mode
     create_hdf5_recursive(hf, dataset_dir)
     hf.close()
