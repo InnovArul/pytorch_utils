@@ -144,7 +144,7 @@ class HDF5Folder(BaseFolder):
         # h5_key = remove_prefix(h5_key, os.sep)
         h5_key = f"/FILES/{osp.basename(self.root)}" + h5_key
 
-        with HDF5_Content(h5_file, h5_key) as obj:
+        with HDF5_Content(self.h5_file, h5_key) as obj:
             byte_arr = np.array(obj)
 
         img = Image.open(io.BytesIO(byte_arr))
