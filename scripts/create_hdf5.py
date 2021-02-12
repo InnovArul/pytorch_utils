@@ -18,7 +18,7 @@ def get_names_in_dir(dirname):
     """    
     return natsorted(os.listdir(dirname))
 
-def create_hdf5_recursive(hdf5_root, data_dir_or_path):
+def create_hdf5_recursive_files(hdf5_root, data_dir_or_path):
     # if it is dir, parse through the contents and call 
     # create_hdf5_recursive recursively
     if osp.isdir(data_dir_or_path):
@@ -27,7 +27,7 @@ def create_hdf5_recursive(hdf5_root, data_dir_or_path):
 
         curr_files_folders = get_names_in_dir(data_dir_or_path)
         for f in curr_files_folders:
-            create_hdf5_recursive(grp, osp.join(data_dir_or_path, f))
+            create_hdf5_recursive_files(grp, osp.join(data_dir_or_path, f))
 
     # if its an image, read and digest the image
     elif filetype.is_image(data_dir_or_path):
@@ -41,6 +41,30 @@ def create_hdf5_recursive(hdf5_root, data_dir_or_path):
         print(f"{data_dir_or_path} not digestable into hdf5")
 
 
+def create_hdf5_recursive_logistics(hdf5_root, data_dir_or_path):
+    # if it is dir, parse through the contents and call 
+    # create_hdf5_recursive recursively
+    if osp.isdir(data_dir_or_path):
+        dirname = osp.basename(data_dir_or_path)
+        grp = hdf5_root.create_group(dirname)  # create a hdf5 group
+        curr_files_folders = get_names_in_dir(data_dir_or_path)
+        
+        string_dt = h5py.special_dtype(vlen=str)
+        grp.create_dataset('__NAMES__', data=np.array(curr_files_folders, dtype=object), dtype=string_dt)
+        # print(grp.get('__NAMES__'))
+        # input()
+
+        for f in curr_files_folders:
+            create_hdf5_recursive_logistics(grp, osp.join(data_dir_or_path, f))
+
+    # if its an image, read and digest the image
+    elif filetype.is_image(data_dir_or_path):
+        imgname = osp.basename(data_dir_or_path)
+        dset = hdf5_root.create_dataset(imgname, data=np.zeros([1])) 
+    else:
+        print(f"{data_dir_or_path} not digestable into hdf5")
+
+
 def create_hdf5_from_dataset(dataset_dir, result_hdf5):
     """create hdf5 file from a dataset folder with images
 
@@ -50,7 +74,13 @@ def create_hdf5_from_dataset(dataset_dir, result_hdf5):
     """    
     print(f"create_hdf5 ({dataset_dir, result_hdf5})")
     hf = h5py.File(result_hdf5, 'w')  # open the file in write mode
-    create_hdf5_recursive(hf, dataset_dir)
+    logistics = hf.create_group('LOGISTICS')
+    files = hf.create_group('FILES')
+
+    print('creating FILES for {}'.format(dataset_dir))
+    create_hdf5_recursive_files(files, dataset_dir)
+    print('creating LOGISTICS for {}'.format(dataset_dir))
+    create_hdf5_recursive_logistics(logistics, dataset_dir)
     hf.close()
 
 def parse_as_image(byte_arr):
@@ -65,7 +95,29 @@ def parse_as_image(byte_arr):
     return np.array(Image.open(io.BytesIO(byte_arr)))
 
 
-def verify_hdf5_recursive(hdf5_root, data_dir_or_path):
+def verify_hdf5_recursive_logistics(hdf5_root, data_dir_or_path):
+    # if it is dir, parse through the contents and call 
+    # create_hdf5_recursive recursively
+    if osp.isdir(data_dir_or_path):
+        dirname = osp.basename(data_dir_or_path)
+        grp = hdf5_root.get(dirname)  # create a hdf5 group
+        curr_files_folders_sys = get_names_in_dir(data_dir_or_path)
+        curr_files_folders_h5 = list(grp.get('__NAMES__'))
+        assert curr_files_folders_h5 == curr_files_folders_sys
+
+        for f in curr_files_folders_sys:
+            verify_hdf5_recursive_logistics(grp, osp.join(data_dir_or_path, f))
+
+    # if its an image, read and digest the image
+    elif filetype.is_image(data_dir_or_path):
+        imgname = osp.basename(data_dir_or_path)
+        dset = hdf5_root.get(imgname) # check if its existing 
+    else:
+        print(f"{data_dir_or_path} not digestable into hdf5")
+
+
+
+def verify_hdf5_recursive_files(hdf5_root, data_dir_or_path):
     # if it is dir, parse through the contents and call 
     # verify_hdf5_recursive recursively
     if osp.isdir(data_dir_or_path):
@@ -74,7 +126,7 @@ def verify_hdf5_recursive(hdf5_root, data_dir_or_path):
 
         curr_files_folders = get_names_in_dir(data_dir_or_path)
         for f in curr_files_folders:
-            verify_hdf5_recursive(grp, osp.join(data_dir_or_path, f))
+            verify_hdf5_recursive_files(grp, osp.join(data_dir_or_path, f))
 
     # if its an image, read and verify the image
     elif filetype.is_image(data_dir_or_path):
@@ -104,7 +156,13 @@ def verify_hdf5(dataset_dir, result_hdf5):
     """
     print(f"verify ({dataset_dir, result_hdf5})")
     hf = h5py.File(result_hdf5, 'r')  # open the file in read mode
-    verify_hdf5_recursive(hf, dataset_dir)
+    logistics = hf.get('LOGISTICS')
+    files = hf.get('FILES')
+    
+    print('verifying FILES for {}'.format(dataset_dir))
+    verify_hdf5_recursive_files(files, dataset_dir)
+    print('verifying LOGISTICS for {}'.format(dataset_dir))
+    verify_hdf5_recursive_logistics(logistics, dataset_dir)
     hf.close()
 
 if __name__ == "__main__":
