@@ -47,6 +47,7 @@ Thanks to the author(s).
     * set_bn_eval
     * set_seed
     * print_cuda_mem
+    * set_stride
 
 * optim/optimizer
     * build_optimizer

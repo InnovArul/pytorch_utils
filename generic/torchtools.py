@@ -15,7 +15,7 @@ from .tools import mkdir_if_missing
 __all__ = [
     'save_checkpoint', 'load_checkpoint', 'resume_from_checkpoint',
     'open_all_layers', 'open_specified_layers', 'count_num_param',
-    'load_pretrained_weights', 'set_seed', 'print_cuda_mem',
+    'load_pretrained_weights', 'set_seed', 'print_cuda_mem', 'set_stride'
 ]
 
 
@@ -29,6 +29,18 @@ def count_num_param(model):
     """
     num_param = sum(p.numel() for p in model.parameters())
     return num_param
+
+
+def set_stride(module, stride):
+    """
+    set stride of the module to given stride    
+    """
+    print("setting stride of ", module.__class__.__name__, " to ", stride)
+    for internal_module in module.modules():
+        if isinstance(internal_module, nn.Conv2d) or isinstance(internal_module, nn.MaxPool2d):
+            internal_module.stride = stride
+
+    return internal_module
 
 
 def save_checkpoint(
