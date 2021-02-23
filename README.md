@@ -49,6 +49,9 @@ Thanks to the author(s).
     * print_cuda_mem
     * set_stride
 
+* generic/clustertools
+    * Kmeans
+
 * optim/optimizer
     * build_optimizer
 
