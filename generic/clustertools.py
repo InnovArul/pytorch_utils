@@ -11,6 +11,7 @@ from PIL import ImageFile
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
+from sklearn.preprocessing import normalize
 
 def preprocess_features(npdata, pca=64, pca_info=None):
     """NOT USED
@@ -46,7 +47,32 @@ def preprocess_features(npdata, pca=64, pca_info=None):
     return npdata, pca_info
 
 
-def run_kmeans(x, nmb_clusters, verbose=False, use_gpu=True):
+def get_index(distance, dim, use_gpu=True):
+    """to get the appropriate index for a given distance
+
+    Args:
+        distance : cosine or euclidean distance
+        dim (int): dimension of vectors
+        use_gpu (bool, optional): whether to use the GPU. Defaults to True.
+
+    Returns:
+        faiss index: index 
+    """    
+    # define gpu resources
+    if use_gpu:
+        res = faiss.StandardGpuResources()
+        flat_config = faiss.GpuIndexFlatConfig()
+        flat_config.useFloat16 = False
+        flat_config.device = 0
+        index = faiss.GpuIndexFlatL2(res, dim, flat_config) if distance == 'euclidean' \
+                                                        else faiss.GpuIndexFlatIP(res, dim, flat_config)
+
+    else:
+        index = faiss.IndexFlatL2(dim) if distance == 'euclidean' else faiss.IndexFlatIP(dim)
+    
+    return index
+
+def run_kmeans(x, nmb_clusters, distance, verbose=False, use_gpu=True):
     """Runs kmeans on 1 GPU.
     Args:
         x: data
@@ -61,14 +87,7 @@ def run_kmeans(x, nmb_clusters, verbose=False, use_gpu=True):
     clus.niter = 20
     clus.max_points_per_centroid = 10000000
 
-    if use_gpu:
-        res = faiss.StandardGpuResources()
-        flat_config = faiss.GpuIndexFlatConfig()
-        flat_config.useFloat16 = False
-        flat_config.device = 0
-        index = faiss.GpuIndexFlatL2(res, d, flat_config)
-    else:
-        index = faiss.IndexFlatL2(d)
+    index = get_index(distance, d, use_gpu)
 
     # perform the training
     clus.train(x, index)
@@ -92,15 +111,25 @@ class Kmeans:
 
     Usage:
 
-        km = Kmeans(k=100)
+        km = Kmeans(k=100, distance='cosine')
         assignments, loss, centroids = km.cluster_features(data) # data = N x dim
         new_assignments = km.assign(new_data) # to assign labels to new data
         km.reset() # to clear memory
     """    
-    def __init__(self, k, pca_dim=64):
+    def __init__(self, k, distance):
         self.k = k
         self.index = None
+        self.distance = distance
+        print(f'Kmeans with k={k}, distance={distance}')
         # self.pca_dim = pca_dim
+    
+    def prep_data(self, data):
+        #  L2 normalize if distance is cosine
+        if self.distance == 'cosine': 
+            print('cosine normalzing data for Kmeans or search')
+            data = normalize(data, norm='l2')
+
+        return data
 
     def cluster_features(self, data, verbose=False, use_gpu=True):
         """Performs k-means clustering.
@@ -116,11 +145,11 @@ class Kmeans:
 
         # PCA-reducing, whitening and L2-normalization
         # xb, pca_info = preprocess_features(data, pca=self.pca_dim)
-        xb = data
-        pca_info = []
+        xb = self.prep_data(data)
 
         # cluster the data
-        assignments, loss, centroids, index = run_kmeans(xb, self.k, verbose, use_gpu=use_gpu)
+        assignments, loss, centroids, index = run_kmeans(xb, self.k,  distance=self.distance, 
+                                                        verbose=verbose, use_gpu=use_gpu)
 
         # store index for future use
         self.index = index
@@ -134,13 +163,14 @@ class Kmeans:
         # use cached index if centroids are not given
         if centroids is None: index = self.index
         else:
-            index = faiss.IndexFlatL2(centroids.shape[1])
+            index = get_index(self.distance, data.shape[1], use_gpu=True)
             index.add(centroids)
 
+        data = self.prep_data(data)
         _, assignments = index.search(data, 1)
 
         # if centroids is given, clean up the index
-        if centroids:
+        if centroids is not None:
             # release mem used by kmeans
             index.reset()
             del index
@@ -148,7 +178,7 @@ class Kmeans:
         return assignments
 
     def reset(self):
-        if self.index:
+        if self.index is not None:
             # release mem used by kmeans
             self.index.reset()
             del self.index
