@@ -14,12 +14,13 @@ from PIL import Image
 import shutil
 import matplotlib.pyplot as plt
 import zipfile
+from glob import glob
 
 __all__ = [
     'mkdir_if_missing', 'check_isfile', 'read_json', 'write_json',
     'download_url', 'read_image', 'collect_env_info',
     'parse_path', 'show_image', 'unzip_file', 'load_image_in_PIL',
-    'save_scripts', 'get_current_time'
+    'save_scripts', 'get_current_time', 'setup_log_folder'
 ]
 
 
@@ -148,7 +149,7 @@ def get_current_time(f='l'):
     if f == 'l':
         return time.strftime('%m/%d %H:%M:%S', time.localtime(time.time()))
     elif f == 'f':
-        return time.strftime('%m_%d_%H_%M', time.localtime(time.time()))
+        return time.strftime('%d-%b-%y-%H:%M', time.localtime(time.time()))
 
 
 def save_scripts(path, scripts_to_save=None):
@@ -178,3 +179,32 @@ def load_image_in_PIL(path, mode='RGB'):
     img = Image.open(path)
     img.load()  # Very important for loading large image
     return img.convert(mode)
+
+
+def setup_log_folder(name, prefix_time=True, log_root='logs', copy_src_files=None):
+    """setup log folder
+
+    Args:
+        name (str): name of the log folder
+        prefix_time (bool, optional): whether to prepend time as prefix. Defaults to True.
+        log_root (str, optional): log root folder. Defaults to 'logs'.
+        copy_src_files (list or tuple, optional): list of dirs with .py files to be copied. Defaults to None.
+
+    Returns:
+        str: log folder path
+    """    
+    folder_name = name
+    # prepend time if needed
+    if prefix_time: folder_name = get_current_time(f='f') + '-' + folder_name
+
+    log_folder = osp.join(log_root, folder_name)
+    assert not osp.exists(log_folder), f"{log_folder} already exists"
+    mkdir_if_missing(log_folder)
+
+    # copy all the source files
+    if copy_src_files is not None:
+        assert isinstance(copy_src_files, (list, tuple))
+        for src_folder in copy_src_files:
+            save_scripts(log_folder, scripts_to_save=glob(f'{src_folder}/*.py', recursive=True))
+
+    return log_folder

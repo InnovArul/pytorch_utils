@@ -35,6 +35,7 @@ Thanks to the author(s).
     * get_current_time
     * save_scripts
     * load_image_in_PIL
+    * setup_log_folder
 
 * generic/torchtools
     * save_checkpoint
