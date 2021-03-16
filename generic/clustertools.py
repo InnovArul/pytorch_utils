@@ -14,7 +14,7 @@ import torchvision.transforms as transforms
 from sklearn.preprocessing import normalize
 
 def preprocess_features(npdata, pca=64, pca_info=None):
-    """NOT USED
+    """
     Preprocess an array of features.
     Args:
         npdata (np.array N * ndim): features to preprocess
@@ -108,6 +108,7 @@ def run_kmeans(x, nmb_clusters, distance, verbose=False, use_gpu=True):
 
 class Kmeans:
     """class used to cluster features.
+        distance option: euclidean | cosine | norm_cosine
 
     Usage:
 
@@ -116,20 +117,29 @@ class Kmeans:
         new_assignments = km.assign(new_data) # to assign labels to new data
         km.reset() # to clear memory
     """    
-    def __init__(self, k, distance):
+    def __init__(self, k, distance, normalize=False, pca_dim=-1):
         self.k = k
         self.index = None
         self.distance = distance
         print(f'Kmeans with k={k}, distance={distance}')
-        # self.pca_dim = pca_dim
+        self.pca_dim = pca_dim
+        self.pca_info = None
+        self.normalize = normalize
     
     def prep_data(self, data):
-        #  L2 normalize if distance is cosine
-        if self.distance == 'cosine': 
-            print('cosine normalzing data for Kmeans or search')
+        #  L2 normalize if needed
+        if self.normalize: 
+            print('normalzing data for Kmeans or search')
             data = normalize(data, norm='l2')
 
-        return data
+        pca_info = None
+        # perform pca if pca dim is less than data dim AND pca_dim os not -1
+        if self.pca_dim != -1 and (data.shape[-1] > self.pca_dim):
+            print(f"applying PCA ({data.shape[-1]} dim -> {self.pca_dim} dim)")
+            data, pca_info = preprocess_features(data, pca_dim=self.pca_dim, 
+                                                pca_info=self.pca_info)
+
+        return data, pca_info
 
     def cluster_features(self, data, verbose=False, use_gpu=True):
         """Performs k-means clustering.
@@ -145,7 +155,7 @@ class Kmeans:
 
         # PCA-reducing, whitening and L2-normalization
         # xb, pca_info = preprocess_features(data, pca=self.pca_dim)
-        xb = self.prep_data(data)
+        xb, pca_info = self.prep_data(data)
 
         # cluster the data
         assignments, loss, centroids, index = run_kmeans(xb, self.k,  distance=self.distance, 
@@ -153,6 +163,7 @@ class Kmeans:
 
         # store index for future use
         self.index = index
+        self.pca_info = pca_info
 
         if verbose:
             print('k-means time: {0:.0f} s'.format(time.time() - end))
@@ -160,6 +171,17 @@ class Kmeans:
         return assignments, loss, centroids
 
     def assign(self, data, centroids=None):
+        """assign cluster ids to the given data max_points_per_centroid
+        centroids parameter is given for convenience. In practice, after clustering,
+        the index is saved in the class itself. So, only data input is required.
+
+        Args:
+            data (array): data array
+            centroids (array, optional): cluster centroids. Defaults to None.
+
+        Returns:
+            cluster id array
+        """        
         # use cached index if centroids are not given
         if centroids is None: index = self.index
         else:
