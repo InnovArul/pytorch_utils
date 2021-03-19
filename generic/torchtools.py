@@ -15,8 +15,21 @@ from .tools import mkdir_if_missing
 __all__ = [
     'save_checkpoint', 'load_checkpoint', 'resume_from_checkpoint',
     'open_all_layers', 'open_specified_layers', 'count_num_param',
-    'load_pretrained_weights', 'set_seed', 'print_cuda_mem', 'set_stride'
+    'load_pretrained_weights', 'set_seed', 'print_cuda_mem', 'set_stride',
+    'ScalarScheduler'
 ]
+
+class ScalarScheduler(object):
+    def __init__(self, start_val, end_val, total_steps, method='linear'):
+        self.start_val = start_val
+        self.end_val = end_val
+        self.method = method
+        self.total_steps = total_steps
+        self.scaled_values = np.linspace(start=start_val, stop=end_val,
+                                            num=total_steps, endpoint=True)
+
+    def get_val(self, step):
+        return self.scaled_values[step]
 
 
 def count_num_param(model):

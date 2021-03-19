@@ -47,7 +47,7 @@ def preprocess_features(npdata, pca=64, pca_info=None):
     return npdata, pca_info
 
 
-def get_index(distance, dim, use_gpu=True):
+def get_index(distance, dim, use_gpu=True, temp_memory=500):
     """to get the appropriate index for a given distance
 
     Args:
@@ -61,6 +61,8 @@ def get_index(distance, dim, use_gpu=True):
     # define gpu resources
     if use_gpu:
         res = faiss.StandardGpuResources()
+        res.setTempMemory(temp_memory)
+
         flat_config = faiss.GpuIndexFlatConfig()
         flat_config.useFloat16 = False
         flat_config.device = 0
@@ -136,7 +138,7 @@ class Kmeans:
         # perform pca if pca dim is less than data dim AND pca_dim os not -1
         if self.pca_dim != -1 and (data.shape[-1] > self.pca_dim):
             print(f"applying PCA ({data.shape[-1]} dim -> {self.pca_dim} dim)")
-            data, pca_info = preprocess_features(data, pca_dim=self.pca_dim, 
+            data, pca_info = preprocess_features(data, pca=self.pca_dim, 
                                                 pca_info=self.pca_info)
 
         return data, pca_info
@@ -188,7 +190,7 @@ class Kmeans:
             index = get_index(self.distance, data.shape[1], use_gpu=True)
             index.add(centroids)
 
-        data = self.prep_data(data)
+        data, _ = self.prep_data(data)
         _, assignments = index.search(data, 1)
 
         # if centroids is given, clean up the index
