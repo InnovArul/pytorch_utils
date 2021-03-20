@@ -20,13 +20,22 @@ __all__ = [
 ]
 
 class ScalarScheduler(object):
-    def __init__(self, start_val, end_val, total_steps, method='linear'):
+    def __init__(self, start_val, end_val, total_steps, method='linear',
+                        gamma=0.1):
         self.start_val = start_val
         self.end_val = end_val
         self.method = method
         self.total_steps = total_steps
-        self.scaled_values = np.linspace(start=start_val, stop=end_val,
-                                            num=total_steps, endpoint=True)
+        self.gamma = gamma
+
+        self.determine_scaled_values()
+
+    def determine_scaled_values(self):
+        if self.method == 'linear':
+            self.scaled_values = np.linspace(start=self.start_val, stop=self.end_val,
+                                            num=self.total_steps, endpoint=True)
+        elif self.method == 'step':
+            pass
 
     def get_val(self, step):
         return self.scaled_values[step]
