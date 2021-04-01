@@ -105,7 +105,7 @@ def run_kmeans(x, nmb_clusters, distance, verbose=False, use_gpu=True):
     if verbose:
         print('k-means loss evolution: {0}'.format(losses))
 
-    return [int(n[0]) for n in I], losses, centroids, index
+    return np.array([int(n[0]) for n in I]), losses, centroids, index
 
 
 class Kmeans:
@@ -119,11 +119,12 @@ class Kmeans:
         new_assignments = km.assign(new_data) # to assign labels to new data
         km.reset() # to clear memory
     """    
-    def __init__(self, k, distance, normalize=False, pca_dim=-1):
+    def __init__(self, k, distance, normalize=False, pca_dim=-1, verbose=False):
         self.k = k
         self.index = None
         self.distance = distance
-        print(f'Kmeans with k={k}, distance={distance}')
+        self.verbose = verbose
+        if verbose: print(f'Kmeans with k={k}, distance={distance}')
         self.pca_dim = pca_dim
         self.pca_info = None
         self.normalize = normalize
@@ -131,19 +132,19 @@ class Kmeans:
     def prep_data(self, data):
         #  L2 normalize if needed
         if self.normalize: 
-            print('normalzing data for Kmeans or search')
+            if self.verbose: print('normalzing data for Kmeans or search')
             data = normalize(data, norm='l2')
 
         pca_info = None
         # perform pca if pca dim is less than data dim AND pca_dim os not -1
         if self.pca_dim != -1 and (data.shape[-1] > self.pca_dim):
-            print(f"applying PCA ({data.shape[-1]} dim -> {self.pca_dim} dim)")
+            if self.verbose: print(f"applying PCA ({data.shape[-1]} dim -> {self.pca_dim} dim)")
             data, pca_info = preprocess_features(data, pca=self.pca_dim, 
                                                 pca_info=self.pca_info)
 
         return data, pca_info
 
-    def cluster_features(self, data, verbose=False, use_gpu=True):
+    def cluster_features(self, data, use_gpu=True):
         """Performs k-means clustering.
             Args:
                 x_data (np.array N * dim): data to cluster
@@ -161,14 +162,13 @@ class Kmeans:
 
         # cluster the data
         assignments, loss, centroids, index = run_kmeans(xb, self.k,  distance=self.distance, 
-                                                        verbose=verbose, use_gpu=use_gpu)
+                                                        verbose=self.verbose, use_gpu=use_gpu)
 
         # store index for future use
         self.index = index
         self.pca_info = pca_info
 
-        if verbose:
-            print('k-means time: {0:.0f} s'.format(time.time() - end))
+        if self.verbose: print('k-means time: {0:.0f} s'.format(time.time() - end))
 
         return assignments, loss, centroids
 
@@ -199,7 +199,7 @@ class Kmeans:
             index.reset()
             del index
 
-        return assignments
+        return np.array([int(n[0]) for n in assignments])
 
     def reset(self):
         if self.index is not None:
